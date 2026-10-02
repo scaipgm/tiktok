@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Shorts AI Subtitler</title>
+  <style>
+    body { font-family: sans-serif; background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .card { background: #1e293b; padding: 2rem; border-radius: 12px; width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    h2 { margin-top: 0; text-align: center; }
+    label { display: block; margin: 12px 0 6px; font-size: 0.9rem; color: #94a3b8; }
+    input[type="file"], input[type="text"] { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #fff; }
+    button { width: 100%; margin-top: 20px; padding: 12px; background: #6366f1; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; }
+    button:hover { background: #4f46e5; }
+    #status { margin-top: 15px; font-size: 0.9rem; text-align: center; color: #38bdf8; }
+    video { width: 100%; margin-top: 15px; border-radius: 8px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>⚡ Shorts Creator</h2>
+    <label>API Key de Groq (gratis en console.groq.com):</label>
+    <input type="text" id="apiKey" placeholder="gsk_..." />
+    
+    <label>Video vertical o corto (MP4, máx 60s):</label>
+    <input type="file" id="videoInput" accept="video/mp4,video/quicktime" />
+    
+    <button id="processBtn" onclick="processVideo()">Generar Video con Subtítulos</button>
+    <p id="status"></p>
+    <video id="resultPlayer" controls></video>
+  </div>
+
+  <script>
+    async function processVideo() {
+      const file = document.getElementById('videoInput').files[0];
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const status = document.getElementById('status');
+      const player = document.getElementById('resultPlayer');
+      const btn = document.getElementById('processBtn');
+
+      if (!file) { alert('Selecciona un video'); return; }
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', apiKey);
+
+      btn.disabled = true;
+      status.innerText = "⏳ Extrayendo audio y transcribiendo con IA...";
+
+      try {
+        const res = await fetch('/process-video', { method: 'POST', body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Error procesando video');
+        }
+        
+        status.innerText = "🎉 ¡Listo! Descargando video final...";
+        const blob = await res.blob();
+        const videoUrl = URL.createObjectURL(blob);
+        player.src = videoUrl;
+        player.style.display = 'block';
+      } catch (err) {
+        status.innerText = "❌ Error: " + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
